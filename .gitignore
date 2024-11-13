@@ -1,0 +1,6 @@
+venv
+/data/data.csv
+test.py
+.idea
+__pycache__
+.git
