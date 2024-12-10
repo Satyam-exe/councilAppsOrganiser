@@ -3,13 +3,13 @@ import csv
 from header_codes import *
 
 def get_questions():
-    with open('data/data.csv', mode='r', encoding='utf-8') as file:
+    with open('data/responses.csv', mode='r', encoding='utf-8') as file:
         data_file = csv.reader(file)
         headers = next(data_file)
         return headers[32:]
 
 def details_from_id(email_id):
-    with open('data/data.csv', mode='r', encoding='utf-8') as file:
+    with open('data/responses.csv', mode='r', encoding='utf-8') as file:
         data_file = csv.reader(file)
         for row in data_file:
             if row[email_id_num] == email_id:
@@ -83,23 +83,19 @@ def post_sec_from_id(email_id):
         if 'Club' in post_applicant:
             post_applicant = post_applicant.replace('of a Club', '')
             match details[class_num]:
-                case 'VIII':
-                    club = details[club_viii_num]
-                case 'IX':
-                    club = details[club_ix_num]
                 case 'X':
-                    club = details[club_x1_num]
+                    club = details[club_x2_num]
                 case 'XI':
-                    club = details[club_xi1_num]
+                    club = details[club_xi2_num]
             post_applicant = post_applicant + ' - ' + club
 
         elif 'House' in post_applicant:
             post_applicant = post_applicant.replace('of a House', '')
             match details[class_num]:
                 case 'X':
-                    house = details[house_x1_num]
+                    house = details[house_x2_num]
                 case 'XI':
-                    house = details[house_xi1_num]
+                    house = details[house_xi2_num]
             post_applicant = post_applicant + ' - ' + house
 
         return post_applicant

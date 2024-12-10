@@ -1,15 +1,16 @@
+import io
 import os
-
 import subprocess
-
+from PIL import Image
 from docx import Document
 from docx.shared import Mm
-
+from pillow_heif import register_heif_opener
 from functions import *
 
 TEMPLATE_PATH = './template/template.docx'
 FINAL_PATH = './data/final/'
 
+register_heif_opener()
 
 def create_docx(email_id):
     doc = Document(TEMPLATE_PATH)
@@ -27,7 +28,8 @@ def create_docx(email_id):
         'answer_2': responses_from_id(email_id)[1],
         'answer_3': responses_from_id(email_id)[2],
     }
-    image_path = f'./data/photos/{regd_from_id(email_id)}.jpg'
+    image_path = f'./data/photos/{details_from_id(email_id)[photo_name_num]}'
+    print(image_path)
     for table in doc.tables:
         for row in table.rows:
             left_cell, right_cell = row.cells
@@ -35,10 +37,31 @@ def create_docx(email_id):
             # Insert image if placeholder is found in the right cell
             if '{{ photograph }}' in right_cell.text:
                 right_cell.text = ""
-                if os.path.exists(image_path):
-                    right_cell_paragraph = right_cell.paragraphs[0]
-                    run = right_cell_paragraph.add_run()
-                    run.add_picture(image_path, width=Mm(35), height=Mm(45))
+                if not os.path.exists(image_path):
+                    image_path+='.jpg'
+                print(image_path)
+                with open(image_path, 'rb') as _image:
+                    image_bytes = _image.read()
+                image = Image.open(io.BytesIO(image_bytes))
+                # Get original image dimensions
+                width, height = image.size
+
+                # Calculate target aspect ratio (7:9)
+                target_ratio = 7 / 9
+                # Calculate the new dimensions to maintain 7:9 aspect ratio
+                if width / height > target_ratio:  # Image is too wide, crop width
+                    new_width = int(height * target_ratio)
+                    offset = (width - new_width) // 2  # Center the crop
+                    crop_box = (offset, 0, offset + new_width, height)
+                else:  # Image is too tall, crop height
+                    new_height = int(width / target_ratio)
+                    offset = (height - new_height) // 2  # Center the crop
+                    crop_box = (0, offset, width, offset + new_height)
+                cropped_image = image.crop(crop_box).convert('RGB')
+                cropped_image.save(f"./data/photos/cropped/{regd_from_id(email_id)}.jpg")
+                right_cell_paragraph = right_cell.paragraphs[0]
+                run = right_cell_paragraph.add_run()
+                run.add_picture(f"./data/photos/cropped/{regd_from_id(email_id)}.jpg", width=Mm(35), height=Mm(45))
 
             # Replace placeholders in the left cell text
             for placeholder, value in data.items():
@@ -69,12 +92,12 @@ def create_docx(email_id):
                         run.text = run.text.replace(f"{{{{ {placeholder} }}}}", value)
 
     # Save the document
-    doc.save(f"{FINAL_PATH}/{regd_from_id(email_id)}.docx")
+    doc.save(f"{FINAL_PATH}/{regd_from_id(email_id)} - {name_from_id(email_id)}.docx")
 
 
 def convert_docx_to_pdf(email_id):
-    docx_path = f"{FINAL_PATH}/{regd_from_id(email_id)}.docx"
-    pdf_path = f"{FINAL_PATH}/{regd_from_id(email_id)}.pdf"
+    docx_path = f"{FINAL_PATH}/{regd_from_id(email_id)} - {name_from_id(email_id)}.docx"
+    pdf_path = f"{FINAL_PATH}/{regd_from_id(email_id)} - {name_from_id(email_id)}.pdf"
 
     subprocess.run(
         [r"C:\Program Files\LibreOffice\program\soffice.exe", "--headless", "--convert-to", "pdf", "--outdir",

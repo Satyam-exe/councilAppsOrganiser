@@ -1,6 +1,7 @@
-venv
-/data/data.csv
-test.py
+ venv
+/data
+validate_spreadsheet.py
 .idea
 __pycache__
 .git
+
